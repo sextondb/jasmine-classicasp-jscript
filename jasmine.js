@@ -29,20 +29,9 @@ jasmine.undefined = jasmine.___undefined___;
 jasmine.VERBOSE = false;
 
 /**
- * Default interval in milliseconds for event loop yields (e.g. to allow network activity or to refresh the screen with the HTML-based runner). Small values here may result in slow test running. Zero means no updates until all tests have completed.
- *
- */
-jasmine.DEFAULT_UPDATE_INTERVAL = 250;
-
-/**
  * Maximum levels of nesting that will be included when an object is pretty-printed
  */
 jasmine.MAX_PRETTY_PRINT_DEPTH = 40;
-
-/**
- * Default timeout interval in milliseconds for waitsFor() blocks.
- */
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 5000;
 
 /**
  * By default exceptions thrown in the context of a test are caught by jasmine so that it can run the remaining tests in the suite.
@@ -58,31 +47,6 @@ jasmine.getGlobal = function() {
 
   return getGlobal();
 };
-
-/**
- * Allows for bound functions to be compared.  Internal use only.
- *
- * @ignore
- * @private
- * @param base {Object} bound 'this' for the function
- * @param name {Function} function to find
- */
-jasmine.bindOriginal_ = function(base, name) {
-  var original = base[name];
-  if (original.apply) {
-    return function() {
-      return original.apply(base, arguments);
-    };
-  } else {
-    // IE support
-    return jasmine.getGlobal()[name];
-  }
-};
-
-jasmine.setTimeout = jasmine.bindOriginal_(jasmine.getGlobal(), 'setTimeout');
-jasmine.clearTimeout = jasmine.bindOriginal_(jasmine.getGlobal(), 'clearTimeout');
-jasmine.setInterval = jasmine.bindOriginal_(jasmine.getGlobal(), 'setInterval');
-jasmine.clearInterval = jasmine.bindOriginal_(jasmine.getGlobal(), 'clearInterval');
 
 jasmine.MessageResult = function(values) {
   this.type = 'log';
@@ -528,39 +492,6 @@ var expect = function(actual) {
 if (isCommonJS) exports.expect = expect;
 
 /**
- * Defines part of a jasmine spec.  Used in cominbination with waits or waitsFor in asynchrnous specs.
- *
- * @param {Function} func Function that defines part of a jasmine spec.
- */
-var runs = function(func) {
-  jasmine.getEnv().currentSpec.runs(func);
-};
-if (isCommonJS) exports.runs = runs;
-
-/**
- * Waits a fixed time period before moving to the next block.
- *
- * @deprecated Use waitsFor() instead
- * @param {Number} timeout milliseconds to wait
- */
-var waits = function(timeout) {
-  jasmine.getEnv().currentSpec.waits(timeout);
-};
-if (isCommonJS) exports.waits = waits;
-
-/**
- * Waits for the latchFunction to return true before proceeding to the next block.
- *
- * @param {Function} latchFunction
- * @param {String} optional_timeoutMessage
- * @param {Number} optional_timeout
- */
-var waitsFor = function(latchFunction, optional_timeoutMessage, optional_timeout) {
-  jasmine.getEnv().currentSpec.waitsFor.apply(jasmine.getEnv().currentSpec, arguments);
-};
-if (isCommonJS) exports.waitsFor = waitsFor;
-
-/**
  * A function that is called before each spec in a suite.
  *
  * Used for spec setup, including validating assumptions.
@@ -722,8 +653,6 @@ jasmine.Env = function() {
 
   this.reporter = new jasmine.MultiReporter();
 
-  this.updateInterval = jasmine.DEFAULT_UPDATE_INTERVAL;
-  this.defaultTimeoutInterval = jasmine.DEFAULT_TIMEOUT_INTERVAL;
   this.lastUpdate = 0;
   this.specFilter = function() {
     return true;
@@ -741,12 +670,6 @@ jasmine.Env = function() {
 
   jasmine.Matchers.wrapInto_(jasmine.Matchers.prototype, this.matchersClass);
 };
-
-
-jasmine.Env.prototype.setTimeout = jasmine.setTimeout;
-jasmine.Env.prototype.clearTimeout = jasmine.clearTimeout;
-jasmine.Env.prototype.setInterval = jasmine.setInterval;
-jasmine.Env.prototype.clearInterval = jasmine.clearInterval;
 
 /**
  * @returns an object containing jasmine version build info, if set.
@@ -1574,188 +1497,6 @@ jasmine.Matchers.ObjectContaining.prototype.jasmineMatches = function(other, mis
 jasmine.Matchers.ObjectContaining.prototype.jasmineToString = function () {
   return "<jasmine.objectContaining(" + jasmine.pp(this.sample) + ")>";
 };
-// Mock setTimeout, clearTimeout
-// Contributed by Pivotal Computer Systems, www.pivotalsf.com
-
-jasmine.FakeTimer = function() {
-  this.reset();
-
-  var self = this;
-  self.setTimeout = function(funcToCall, millis) {
-    self.timeoutsMade++;
-    self.scheduleFunction(self.timeoutsMade, funcToCall, millis, false);
-    return self.timeoutsMade;
-  };
-
-  self.setInterval = function(funcToCall, millis) {
-    self.timeoutsMade++;
-    self.scheduleFunction(self.timeoutsMade, funcToCall, millis, true);
-    return self.timeoutsMade;
-  };
-
-  self.clearTimeout = function(timeoutKey) {
-    self.scheduledFunctions[timeoutKey] = jasmine.undefined;
-  };
-
-  self.clearInterval = function(timeoutKey) {
-    self.scheduledFunctions[timeoutKey] = jasmine.undefined;
-  };
-
-};
-
-jasmine.FakeTimer.prototype.reset = function() {
-  this.timeoutsMade = 0;
-  this.scheduledFunctions = {};
-  this.nowMillis = 0;
-};
-
-jasmine.FakeTimer.prototype.tick = function(millis) {
-  var oldMillis = this.nowMillis;
-  var newMillis = oldMillis + millis;
-  this.runFunctionsWithinRange(oldMillis, newMillis);
-  this.nowMillis = newMillis;
-};
-
-jasmine.FakeTimer.prototype.runFunctionsWithinRange = function(oldMillis, nowMillis) {
-  var scheduledFunc;
-  var funcsToRun = [];
-  for (var timeoutKey in this.scheduledFunctions) {
-    scheduledFunc = this.scheduledFunctions[timeoutKey];
-    if (scheduledFunc != jasmine.undefined &&
-        scheduledFunc.runAtMillis >= oldMillis &&
-        scheduledFunc.runAtMillis <= nowMillis) {
-      funcsToRun.push(scheduledFunc);
-      this.scheduledFunctions[timeoutKey] = jasmine.undefined;
-    }
-  }
-
-  if (funcsToRun.length > 0) {
-    funcsToRun.sort(function(a, b) {
-      return a.runAtMillis - b.runAtMillis;
-    });
-    for (var i = 0; i < funcsToRun.length; ++i) {
-      try {
-        var funcToRun = funcsToRun[i];
-        this.nowMillis = funcToRun.runAtMillis;
-        funcToRun.funcToCall();
-        if (funcToRun.recurring) {
-          this.scheduleFunction(funcToRun.timeoutKey,
-              funcToRun.funcToCall,
-              funcToRun.millis,
-              true);
-        }
-      } catch(e) {
-      }
-    }
-    this.runFunctionsWithinRange(oldMillis, nowMillis);
-  }
-};
-
-jasmine.FakeTimer.prototype.scheduleFunction = function(timeoutKey, funcToCall, millis, recurring) {
-  this.scheduledFunctions[timeoutKey] = {
-    runAtMillis: this.nowMillis + millis,
-    funcToCall: funcToCall,
-    recurring: recurring,
-    timeoutKey: timeoutKey,
-    millis: millis
-  };
-};
-
-/**
- * @namespace
- */
-jasmine.Clock = {
-  defaultFakeTimer: new jasmine.FakeTimer(),
-
-  reset: function() {
-    jasmine.Clock.assertInstalled();
-    jasmine.Clock.defaultFakeTimer.reset();
-  },
-
-  tick: function(millis) {
-    jasmine.Clock.assertInstalled();
-    jasmine.Clock.defaultFakeTimer.tick(millis);
-  },
-
-  runFunctionsWithinRange: function(oldMillis, nowMillis) {
-    jasmine.Clock.defaultFakeTimer.runFunctionsWithinRange(oldMillis, nowMillis);
-  },
-
-  scheduleFunction: function(timeoutKey, funcToCall, millis, recurring) {
-    jasmine.Clock.defaultFakeTimer.scheduleFunction(timeoutKey, funcToCall, millis, recurring);
-  },
-
-  useMock: function() {
-    if (!jasmine.Clock.isInstalled()) {
-      var spec = jasmine.getEnv().currentSpec;
-      spec.after(jasmine.Clock.uninstallMock);
-
-      jasmine.Clock.installMock();
-    }
-  },
-
-  installMock: function() {
-    jasmine.Clock.installed = jasmine.Clock.defaultFakeTimer;
-  },
-
-  uninstallMock: function() {
-    jasmine.Clock.assertInstalled();
-    jasmine.Clock.installed = jasmine.Clock.real;
-  },
-
-  real: {
-    setTimeout: jasmine.getGlobal().setTimeout,
-    clearTimeout: jasmine.getGlobal().clearTimeout,
-    setInterval: jasmine.getGlobal().setInterval,
-    clearInterval: jasmine.getGlobal().clearInterval
-  },
-
-  assertInstalled: function() {
-    if (!jasmine.Clock.isInstalled()) {
-      throw new Error("Mock clock is not installed, use jasmine.Clock.useMock()");
-    }
-  },
-
-  isInstalled: function() {
-    return jasmine.Clock.installed == jasmine.Clock.defaultFakeTimer;
-  },
-
-  installed: null
-};
-jasmine.Clock.installed = jasmine.Clock.real;
-
-//else for IE support
-jasmine.getGlobal().setTimeout = function(funcToCall, millis) {
-  if (jasmine.Clock.installed.setTimeout.apply) {
-    return jasmine.Clock.installed.setTimeout.apply(this, arguments);
-  } else {
-    return jasmine.Clock.installed.setTimeout(funcToCall, millis);
-  }
-};
-
-jasmine.getGlobal().setInterval = function(funcToCall, millis) {
-  if (jasmine.Clock.installed.setInterval.apply) {
-    return jasmine.Clock.installed.setInterval.apply(this, arguments);
-  } else {
-    return jasmine.Clock.installed.setInterval(funcToCall, millis);
-  }
-};
-
-jasmine.getGlobal().clearTimeout = function(timeoutKey) {
-  if (jasmine.Clock.installed.clearTimeout.apply) {
-    return jasmine.Clock.installed.clearTimeout.apply(this, arguments);
-  } else {
-    return jasmine.Clock.installed.clearTimeout(timeoutKey);
-  }
-};
-
-jasmine.getGlobal().clearInterval = function(timeoutKey) {
-  if (jasmine.Clock.installed.clearTimeout.apply) {
-    return jasmine.Clock.installed.clearInterval.apply(this, arguments);
-  } else {
-    return jasmine.Clock.installed.clearInterval(timeoutKey);
-  }
-};
 
 /**
  * @constructor
@@ -2080,17 +1821,11 @@ jasmine.Queue.prototype.next_ = function() {
         self.index++;
 
         var now = new Date().getTime();
-        if (self.env.updateInterval && now - self.env.lastUpdate > self.env.updateInterval) {
-          self.env.lastUpdate = now;
-          self.env.setTimeout(function() {
-            self.next_();
-          }, 0);
+        self.env.lastUpdate = now;
+        if (jasmine.Queue.LOOP_DONT_RECURSE && completedSynchronously) {
+          goAgain = true;
         } else {
-          if (jasmine.Queue.LOOP_DONT_RECURSE && completedSynchronously) {
-            goAgain = true;
-          } else {
-            self.next_();
-          }
+          self.next_();
         }
       };
       self.blocks[self.index].execute(onComplete);
@@ -2521,75 +2256,6 @@ jasmine.Suite.prototype.execute = function(onComplete) {
   this.queue.start(function () {
     self.finish(onComplete);
   });
-};
-jasmine.WaitsBlock = function(env, timeout, spec) {
-  this.timeout = timeout;
-  jasmine.Block.call(this, env, null, spec);
-};
-
-jasmine.util.inherit(jasmine.WaitsBlock, jasmine.Block);
-
-jasmine.WaitsBlock.prototype.execute = function (onComplete) {
-  if (jasmine.VERBOSE) {
-    this.env.reporter.log('>> Jasmine waiting for ' + this.timeout + ' ms...');
-  }
-  this.env.setTimeout(function () {
-    onComplete();
-  }, this.timeout);
-};
-/**
- * A block which waits for some condition to become true, with timeout.
- *
- * @constructor
- * @extends jasmine.Block
- * @param {jasmine.Env} env The Jasmine environment.
- * @param {Number} timeout The maximum time in milliseconds to wait for the condition to become true.
- * @param {Function} latchFunction A function which returns true when the desired condition has been met.
- * @param {String} message The message to display if the desired condition hasn't been met within the given time period.
- * @param {jasmine.Spec} spec The Jasmine spec.
- */
-jasmine.WaitsForBlock = function(env, timeout, latchFunction, message, spec) {
-  this.timeout = timeout || env.defaultTimeoutInterval;
-  this.latchFunction = latchFunction;
-  this.message = message;
-  this.totalTimeSpentWaitingForLatch = 0;
-  jasmine.Block.call(this, env, null, spec);
-};
-jasmine.util.inherit(jasmine.WaitsForBlock, jasmine.Block);
-
-jasmine.WaitsForBlock.TIMEOUT_INCREMENT = 10;
-
-jasmine.WaitsForBlock.prototype.execute = function(onComplete) {
-  if (jasmine.VERBOSE) {
-    this.env.reporter.log('>> Jasmine waiting for ' + (this.message || 'something to happen'));
-  }
-  var latchFunctionResult;
-  try {
-    latchFunctionResult = this.latchFunction.apply(this.spec);
-  } catch (e) {
-    this.spec.fail(e);
-    onComplete();
-    return;
-  }
-
-  if (latchFunctionResult) {
-    onComplete();
-  } else if (this.totalTimeSpentWaitingForLatch >= this.timeout) {
-    var message = 'timed out after ' + this.timeout + ' msec waiting for ' + (this.message || 'something to happen');
-    this.spec.fail({
-      name: 'timeout',
-      message: message
-    });
-
-    this.abort = true;
-    onComplete();
-  } else {
-    this.totalTimeSpentWaitingForLatch += jasmine.WaitsForBlock.TIMEOUT_INCREMENT;
-    var self = this;
-    this.env.setTimeout(function() {
-      self.execute(onComplete);
-    }, jasmine.WaitsForBlock.TIMEOUT_INCREMENT);
-  }
 };
 
 jasmine.version_= {
