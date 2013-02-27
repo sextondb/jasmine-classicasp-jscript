@@ -4,7 +4,7 @@
 <script language="JScript" src="src/jasmine.js" runat="server"></script>
 <script language="JScript" src="src/SpecRunner.js" runat="server"></script>
 
-<!-- #include file="tests/AllSpecs.asp" -->
+<!-- #include file="specs/AllSpecs.asp" -->
 
 <script language="JScript" runat="server">
     main();
