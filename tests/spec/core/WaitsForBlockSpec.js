@@ -1,4 +1,4 @@
-describe('WaitsForBlock', function () {
+xdescribe('WaitsForBlock', function () {
   var env, suite, timeout, spec, message, onComplete, fakeTimer;
   beforeEach(function() {
     env = new jasmine.Env();
