@@ -1,4 +1,4 @@
-describe("MockClock", function () {
+xdescribe("MockClock", function () {
 
   beforeEach(function() {
     jasmine.Clock.useMock();    
