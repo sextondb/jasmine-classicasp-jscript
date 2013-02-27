@@ -5,12 +5,6 @@ describe('Suite', function() {
   beforeEach(function() {
     env = new jasmine.Env();
     env.updateInterval = 0;
-
-    fakeTimer = new jasmine.FakeTimer();
-    env.setTimeout = fakeTimer.setTimeout;
-    env.clearTimeout = fakeTimer.clearTimeout;
-    env.setInterval = fakeTimer.setInterval;
-    env.clearInterval = fakeTimer.clearInterval;
   });
 
   describe('Specs', function () {
@@ -102,7 +96,6 @@ describe('Suite', function() {
           this.runs(function () {
             this.expect(true).toEqual(true);
           });
-          this.waits(10);
           this.runs(function () {
             this.expect(true).toEqual(true);
           });
