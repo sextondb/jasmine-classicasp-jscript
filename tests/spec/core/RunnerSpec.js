@@ -6,11 +6,6 @@ describe('RunnerTest', function() {
     env = new jasmine.Env();
     env.updateInterval = 0;
 
-    fakeTimer = new jasmine.FakeTimer();
-    env.setTimeout = fakeTimer.setTimeout;
-    env.clearTimeout = fakeTimer.clearTimeout;
-    env.setInterval = fakeTimer.setInterval;
-    env.clearInterval = fakeTimer.clearInterval;
   });
 
   describe('beforeEach', function() {
@@ -215,7 +210,6 @@ describe('RunnerTest', function() {
 
       env.describe('another suite description', function () {
         env.it('should be another test', function() {
-          this.waits(200);
           this.runs(function () {
             this.expect(true).toEqual(false);
           });
@@ -223,8 +217,6 @@ describe('RunnerTest', function() {
       });
 
       env.currentRunner().execute();
-      expect(fakeReporter.reportRunnerResults).not.toHaveBeenCalled();
-      fakeTimer.tick(200);
       //This blows up the JSApiReporter.
       //expect(fakeReporter.reportRunnerResults).toHaveBeenCalledWith(env.currentRunner);
       expect(fakeReporter.reportRunnerResults).toHaveBeenCalled();
