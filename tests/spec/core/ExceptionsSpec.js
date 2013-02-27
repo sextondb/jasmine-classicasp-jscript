@@ -59,11 +59,6 @@ describe('Exceptions:', function() {
 
   describe("with catch on exception", function() {
     it('should handle exceptions thrown, but continue', function() {
-      var fakeTimer = new jasmine.FakeTimer();
-      env.setTimeout = fakeTimer.setTimeout;
-      env.clearTimeout = fakeTimer.clearTimeout;
-      env.setInterval = fakeTimer.setInterval;
-      env.clearInterval = fakeTimer.clearInterval;
 
       //we run two exception tests to make sure we continue after throwing an exception
       var suite = env.describe('Suite for handles exceptions', function () {
@@ -88,7 +83,6 @@ describe('Exceptions:', function() {
           this.runs(function () {
             var foo = 'foo';
           });
-          this.waits(250);
           this.runs(function () {
             throw new Error('fake error 3');
           });
@@ -101,13 +95,11 @@ describe('Exceptions:', function() {
 
       var runner = env.currentRunner();
       suite.execute();
-      fakeTimer.tick(2500);
 
       var suiteResults = suite.results();
       var specResults = suiteResults.getItems();
 
       expect(suiteResults.passed()).toEqual(false);
-      //
       expect(specResults.length).toEqual(5);
       expect(specResults[0].passed()).toMatch(false);
       var blockResults = specResults[0].getItems();
