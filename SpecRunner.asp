@@ -3,11 +3,6 @@
 <script language="JScript" src="vendor/json2/json2.js" runat="server"></script>
 <script language="JScript" src="src/jasmine.js" runat="server"></script>
 
-<script language="JScript" src="tests/src/Song.js" runat="server"></script>
-<script language="JScript" src="tests/src/Player.js" runat="server"></script>
-<script language="JScript" src="tests/spec/SpecHelper.js" runat="server"></script>
-<script language="JScript" src="tests/spec/PlayerSpec.js" runat="server"></script>
-
 <script language="JScript" src="tests/spec/core/BaseSpec.js" runat="server"></script>
 <script language="JScript" src="tests/spec/core/CustomMatchersSpec.js" runat="server"></script>
 <script language="JScript" src="tests/spec/core/EnvSpec.js" runat="server"></script>
