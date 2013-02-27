@@ -981,7 +981,10 @@ jasmine.Block.prototype.execute = function(onComplete) {
       this.spec.fail(e);
     }
   }
-  onComplete();
+  if(onComplete){
+      onComplete();
+  }
+
 };
 /** JavaScript API reporter.
  *
@@ -1784,53 +1787,22 @@ jasmine.Queue.prototype.isRunning = function() {
   return this.running;
 };
 
-jasmine.Queue.LOOP_DONT_RECURSE = true;
-
 jasmine.Queue.prototype.next_ = function() {
   var self = this;
-  var goAgain = true;
 
-  while (goAgain) {
-    goAgain = false;
-    
-    if (self.index < self.blocks.length && !(this.abort && !this.ensured[self.index])) {
-      var calledSynchronously = true;
-      var completedSynchronously = false;
+  while (self.index < self.blocks.length && !(this.abort && !this.ensured[self.index])) {
+      self.blocks[self.index].execute();
 
-      var onComplete = function () {
-        if (jasmine.Queue.LOOP_DONT_RECURSE && calledSynchronously) {
-          completedSynchronously = true;
-          return;
-        }
-
-        if (self.blocks[self.index].abort) {
+      if (self.blocks[self.index].abort) {
           self.abort = true;
-        }
-
-        self.offset = 0;
-        self.index++;
-
-        var now = new Date().getTime();
-        self.env.lastUpdate = now;
-        if (jasmine.Queue.LOOP_DONT_RECURSE && completedSynchronously) {
-          goAgain = true;
-        } else {
-          self.next_();
-        }
-      };
-      self.blocks[self.index].execute(onComplete);
-
-      calledSynchronously = false;
-      if (completedSynchronously) {
-        onComplete();
       }
-      
-    } else {
-      self.running = false;
-      if (self.onComplete) {
-        self.onComplete();
-      }
-    }
+
+      self.offset = 0;
+      self.index++;
+  }
+  self.running = false;
+  if (self.onComplete) {
+      self.onComplete();
   }
 };
 
