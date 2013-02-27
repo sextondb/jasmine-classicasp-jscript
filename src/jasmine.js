@@ -40,14 +40,6 @@ jasmine.MAX_PRETTY_PRINT_DEPTH = 40;
  */
 jasmine.CATCH_EXCEPTIONS = true;
 
-jasmine.getGlobal = function() {
-  function getGlobal() {
-    return this;
-  }
-
-  return getGlobal();
-};
-
 jasmine.MessageResult = function(values) {
   this.type = 'log';
   this.values = values;
@@ -1632,8 +1624,6 @@ jasmine.PrettyPrinter.prototype.format = function(value) {
       this.emitScalar('undefined');
     } else if (value === null) {
       this.emitScalar('null');
-    } else if (value === jasmine.getGlobal()) {
-      this.emitScalar('<global>');
     } else if (value.jasmineToString) {
       this.emitScalar(value.jasmineToString());
     } else if (typeof value === 'string') {
